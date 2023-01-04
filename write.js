@@ -12,16 +12,29 @@ const port = new SerialPort({
   dataBits: 8,
   parity: 'none',
   stopBits: 1,
-  autoOpen: true,
+  autoOpen: false,
   encoding: 'hex'
 });
 
-r1.on('line', line => {
-  port.write(Buffer.from(line, 'hex'), err => {
-    if(err) {
-      return console.log('Error on write:', err.message);
-    }
+rl.on('line', line => {
+  port.on('open', () => {
+    port.write(Buffer.from(line, 'hex'), err => {
+      if(err) {
+        return console.log('Error on write:', err.message);
+      }
+    });
   });
-  console.log('message:', line, 'sent');
+  console.log('Sent:'+ line);
+});
+
+port.on('error', err => {
+  console.log('Error:', err.message);
+});
+
+port.on('data', data => {
+  console.log('Received:', data.toString('hex'));
+});
+
+port.on('readable', () => {
   console.log('Data:', port.read());
-})
+});
