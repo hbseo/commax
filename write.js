@@ -17,6 +17,10 @@ const port = new SerialPort({
 });
 
 rl.on('line', line => {
+  if(line === 'exit') {
+    rl.close();
+  }
+
   port.on('open', () => {
     port.write(Buffer.from(line, 'hex'), err => {
       if(err) {
@@ -25,6 +29,10 @@ rl.on('line', line => {
     });
   });
   console.log('Sent:'+ line);
+});
+
+rl.on('close', () => {
+  process.exit();
 });
 
 port.on('error', err => {
