@@ -1,10 +1,11 @@
-const readline = require('readline');
 const { SerialPort } = require('serialport');
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
+const LIGHT_1_TX = ['3101010000000033', '3101000000000032'];
+const LIGHT_1_RX = ['b1010100000000b3', 'b1000100000000b2'];
+const LIGHT_2_TX = ['3102010000000034', '3102000000000033'];
+const LIGHT_2_RX = ['b1010200000000b4', 'b1000200000000b3'];
+const LIGHT_3_TX = ['3103010000000035', '3103000000000034'];
+const LIGHT_3_RX = ['b1010300000000b5', 'b1000300000000b4'];
 
 const port = new SerialPort({
   path: '/dev/ttyUSB0',
@@ -16,33 +17,53 @@ const port = new SerialPort({
   encoding: 'hex'
 });
 
-rl.on('line', line => {
-  if(line === 'exit') {
-    rl.close();
-  }
+const switchLight = (tx, rx) => {
+  open();
 
-  port.on('open', () => {
-    port.write(Buffer.from(line, 'hex'), err => {
-      if(err) {
-        return console.log('Error on write:', err.message);
-      }
-    });
+  setTimeout(() => {
+    console.log('server error');
+    process.exit(0);
+  }, 7000);
+
+  
+  setInterval(() => {
+    write(tx);
+  }, 2000);
+  read(rx);
+  error();
+}
+
+const open = () => {
+  port.open(err => {
+    if (err) {
+      return console.log('Error opening port: ', err.message)
+    }
+    console.log('Open port');
   });
-  console.log('Sent:'+ line);
-});
+}
 
-rl.on('close', () => {
-  process.exit();
-});
+const write = (packet) => {
+  port.write(Buffer.from(packet, 'hex'), err => {
+    if(err) {
+      return console.log('Error on write:', err.message);
+    }
+    console.log('Message write:', packet);
+  });
+}
 
-port.on('error', err => {
-  console.log('Error:', err.message);
-});
+const read = (packet) => {
+  port.on('data', data => {
+    if(data.toString('hex') === packet) {
+      console.log('Received:', data.toString('hex'));
+      process.exit(0);
+    }
+  });
+}
 
-port.on('data', data => {
-  console.log('Received:', data.toString('hex'));
-});
+const error = () => {
+  port.on('error', err => {
+    console.log('Error:', err.message);
+  });
+}
 
-port.on('readable', () => {
-  console.log('Data:', port.read());
-});
+switchLight(LIGHT_1_TX[0], LIGHT_1_RX[0]);
